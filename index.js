@@ -1,21 +1,10 @@
 require("dotenv").config();
-const nodemailer = require("nodemailer");
+const mailerOutlook = require("nodejs-nodemailer-outlook");
 const csvToJson = require("csvtojson");
 const choice = process.argv[2];
 
-const mailer = nodemailer.createTransport({
-	service: "gmail",
-	host: 'smtp.gmail.com',
-	port: 465,
-	secure: true, 
-	auth: {
-		type: "OAuth2",
-		user: process.env.MAILUSER,
-		clientId: process.env.MAILER_CLIENT_ID, //Client ID from Google API Console
-		clientSecret: process.env.MAILER_SECRET_TOKEN, // Client Secret from Google API Console
-		refreshToken: process.env.MAILER_REFRESH_TOKEN // Refresh Token from https://developers.google.com/oauthplayground/
-	}
-});
+const user = process.env.MAILUSER;
+const pass = process.env.MAILPASS;
 
 async function sendMail(file, email){
 	console.log(file);
@@ -26,8 +15,12 @@ async function sendMail(file, email){
 
 		if(data.length >= 1){
 			data.forEach(d => {
-				mailer.sendMail({
-					from: process.env.MAILUSER,
+				mailerOutlook.sendEmail({
+					auth: {
+						user,
+						pass
+					},
+					from: user,
 					to: d.Email || d.email,
 					subject: "Hello Friend",
 					html: "Hello friend. Here is mail"
@@ -44,26 +37,29 @@ async function sendMail(file, email){
 	}
 
 	if(email){
-		mailer.sendMail({
-			from: process.env.MAILUSER,
+		mailerOutlook.sendEmail({
+			auth: {
+				user,
+				pass
+			},
+			from: user,
 			to: email,
 			subject: "Hello friend",
-			html: "Hello there"
-		}, (err, info) => {
-			if(err){
-				console.log(err);
-			} else {
-				console.log("sent");
-				console.log(info);
+			html: "Hello there",
+			onError: (e) => {
+				console.log(e);
+			},
+			onSuccess: () => {
+				console.log("success");
 			}
-		})
+		});
 	}
 }
 
 if(choice == "list"){
 	sendMail(process.argv[3], null);
 } else if(choice == "single") {
-	sendMail(null, process.argv[3])
+	sendMail(null, process.argv[3]);
 } else {
 	console.log("unknown choice");
 }
